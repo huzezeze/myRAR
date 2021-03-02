@@ -53,7 +53,8 @@ export const Resources = [
     ["rb", "././images/pukes/rb.jpg"     ]               ,
     ["rc", "././images/pukes/rc.jpg"     ]               ,
     ["rd", "././images/pukes/rd.jpg"     ]               ,
-    ["putPuke", '././images/putPuke.png'],
-    ["cancel", '././images/cancel.png']
+    ["putPuke", '././images/putPuke.png' ]                  ,
+    ["cancel", '././images/cancel.png'   ]                  ,
+    ["pukeBack", "././images/pukes/pukeBack.jpg" ]
 ];
 

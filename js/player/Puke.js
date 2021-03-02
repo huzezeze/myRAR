@@ -10,6 +10,8 @@ export class Puke extends Sprite{
         const img = Sprite.getImage(pukeName);
         super(img);
 
+        this.pukeName = pukeName;
+
         this.imgX = -1;
         this.imgY = -1;
 

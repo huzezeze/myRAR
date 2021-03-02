@@ -1,4 +1,5 @@
 import {DataStore} from "../base/DataStore.js";
+import {Sprite} from "../base/Sprite";
 
 /**
  * @Description: 玩家牌组类
@@ -15,10 +16,13 @@ export class PlayerPukes {
         this.dataStore = DataStore.getInstance();
 
         this.pukes = pukes;
+        this.pukeStr = [];
         this.pukeNum = pukeNum;
         this.startX = startX;
         this.startY = startY;
         this.len = len;
+
+        this.dir = 'mid';
     }
 
     //返回第n张牌
@@ -37,19 +41,21 @@ export class PlayerPukes {
         for(let i = this.pukeNum; i > n; i--)
             this.pukes[i] = this.pukes[i-1];
         this.pukes[n] = curPuke;
+        this.pukeStr[n] = curPuke.pukeName;
 
         this.pukeNum++;
         this.sortPuke();
         this.updateSite();
     }
 
-    //移除并返回第n个位置的牌
+    //移除并返回第n个位置的牌  n从0开始
     remove(n){
         if(n >= this.pukeNum)
             throw Error("n is out of scope!");
         let removePuke = this.pukes[n];
-        for (let i = n; i < this.pukeNum; i++){
+        for (let i = n; i < this.pukeNum-1; i++){
             this.pukes[i] = this.pukes[i+1];
+            this.pukeStr[i] = this.pukeStr[i+1];
         }
 
         this.pukeNum--;
@@ -63,6 +69,10 @@ export class PlayerPukes {
         let t = this.pukes[a];
         this.pukes[a] = this.pukes[b];
         this.pukes[b] = t;
+
+        let s = this.pukeStr[a];
+        this.pukeStr[a] = this.pukeStr[b];
+        this.pukeStr[b] = s;
     }
 
     //对自己进行排序
@@ -76,10 +86,22 @@ export class PlayerPukes {
         }
     }
 
+    setStartX(startX){
+        this.startX = startX;
+    }
+
     //更新所有牌的位置
     updateSite(){
         this.len = (this.pukeNum-1) * this.dataStore._pukeStep + this.dataStore._pukeW;
-        this.startX = (this.dataStore.WIN_W - this.len) / 2;
+        //TODO 这里重复修改startX导致2 3号的put牌组的位置出错
+        switch (this.dir){
+            case "mid":
+                this.startX = (this.dataStore.WIN_W - this.len) / 2;
+                break;
+            case "left":
+            case "right":
+                break;
+        }
 
         for(let i = 0; i < this.pukeNum; i++){
             let curPuke = this.pukes[i];
@@ -108,7 +130,6 @@ export class PlayerPukes {
         this.pukes = [];
         this.pukeNum = 0;
         this.startX = 0;
-        this.startY = this.startY;
         this.len = 0;
     }
 }

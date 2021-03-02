@@ -64,10 +64,22 @@ export class Director {
 
         this.pukeHeap = new PukeHeap();
         this.dataStore.pukeHeap = this.pukeHeap;
-        this.play1 = new Players();
+
+        this.playerNum = 3;
+        this.dataStore.curHostPlayerId = 1;
+        this.dataStore.curPutPlayerId = 1;
+
+        this.play1 = new Players(1);
         this.dataStore.showBut = true;
+        this.dataStore.canPut = true;
         this.putPukeButton = PutPukeButton.getInstance();
         this.cancelButton = CancelButton.getInstance();
+
+        this.play2 = new Players(2); this.play2.setDir('right');
+        this.play3 = new Players(3); this.play3.setDir('left');
+        console.log(this.play1.handPukes.pukeStr);
+        console.log(this.play2.handPukes.pukeStr);
+        console.log(this.play3.handPukes.pukeStr);
 
         this.onTouch();
         this.run();
@@ -94,29 +106,61 @@ export class Director {
                     if(this.dataStore.debug)
                         console.log("点击put");
                     this.play1.checkPutPukes();
+                    this.play2.putPukes.clear();
+                    console.log("1号", this.play1.handPukes.pukeStr, this.play1.putPukes.pukeStr);
                 }
             else if(this.cancelButton.checkClick(
                 this.touchStartX, this.touchStartY, this.touchEndX, this.touchEndY)
                 && this.dataStore.showBut){
                     if(this.dataStore.debug)
                         console.log("点击cancel");
+                    this.play1.cancelPut();
                 }
         }
 
-
         //响应完本次点击事件后重新监听点击，并清屏重绘
-        if(this.touchStartX != -1){
+        if(this.touchStartX !== -1){
             this.touchStartX = -1;
             this.touchStartY = -1;
             this.touchEndX = -1;
             this.touchEndY = -1;
             this.onTouch();
+
+
+
             this.dataStore.ctx.clearRect(0, 0,
                 this.dataStore.canvas.width, this.dataStore.canvas.height);
+            if(this.dataStore.curHostPlayerId === this.dataStore.curPutPlayerId){
+                this.dataStore.showBut = true;
+            }
+
+            else{
+                if(this.dataStore.canPut && this.play2.robotCheckPut()){
+                    console.log("2号人机要出牌了");
+                    this.play2.robotPutPuke();
+                    this.play3.putPukes.clear();
+                    console.log("2号", this.play2.handPukes.pukeStr, this.play2.putPukes.pukeStr);
+                    this.delay(2);
+                }
+                if(this.dataStore.canPut && this.play3.robotCheckPut()){
+                    console.log("3号人机要出牌了");
+                    this.play3.robotPutPuke();
+                    this.play1.putPukes.clear();
+                    console.log("3号", this.play3.handPukes.pukeStr, this.play3.putPukes.pukeStr);
+                    this.delay(2);
+                }
+                this.dataStore.showBut = false;
+            }
+
+            console.log("应该出了一张牌");
+
             this.displayAll();
         }
     }
 
+    /**
+     * 开启微信监听点击事件
+     */
     onTouch(){
         if(this.dataStore.debug){
             console.log('onTouch');
@@ -158,12 +202,23 @@ export class Director {
 
     }
 
-
-
     displayAll(){
         this.play1.displayPukes();
         this.putPukeButton.display();
         this.cancelButton.display();
+        this.play2.displayBack();
+        this.play3.displayBack();
+    }
+
+    /**
+     * 延时time秒后修改出牌状态
+     * @param time 单位秒
+     */
+    delay(time){
+        setTimeout(function (){
+            console.log("延时函数内部");
+            Director.getInstance().dataStore.canPut = true;
+        }, time * 1000);
     }
 
     run() {
@@ -177,7 +232,6 @@ export class Director {
 
 
         this.displayAll();
-
 
 
         /**

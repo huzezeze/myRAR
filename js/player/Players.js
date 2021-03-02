@@ -1,5 +1,6 @@
 import {DataStore} from "../base/DataStore.js";
 import {PlayerPukes} from "./PlayerPukes.js";
+import {Sprite} from "../base/Sprite";
 
 /**
  * @Description:  玩家类
@@ -7,13 +8,17 @@ import {PlayerPukes} from "./PlayerPukes.js";
  * @date 2021/2/26 20:02
  */
 export class Players {
-    constructor() {
+    constructor(playerId, isRobot = false) {
         console.log('players初始化');
         this.dataStore = DataStore.getInstance();
+
+        this.id = playerId;
+        this.isRobot = isRobot;
 
         //手牌
         this.handPukes = new PlayerPukes();
         this.handPukes.startY = this.dataStore._pukeStartHigh;
+        this.pukeBack = new Sprite(Sprite.getImage("pukeBack"));
 
         //出牌区的牌
         this.putPukes = new PlayerPukes();
@@ -24,6 +29,7 @@ export class Players {
         // this.putPukeLen = 0;
 
         this.isMyPhone = true;
+        this.dir = 'mid';
 
         this.score = 0;
         this.winNum = 0;
@@ -124,8 +130,10 @@ export class Players {
             else
                 curId ++;
         }
-        if(havePut){
-            this.dataStore.showBut = false;
+        //当前玩家出完牌之后 出牌权转到下家
+        if(havePut && this.checkPutIsTrue()){
+            console.log("修改this.dataStore.curPutPlayerId");
+            this.dataStore.curPutPlayerId = this.nextPlayerId();
         }
 
         this.handPukes.updateSite();
@@ -134,10 +142,105 @@ export class Players {
         return havePut;
     }
 
+    cancelPut(){
+        console.log(this.id + "号放弃出牌");
+        this.dataStore.curPutPlayerId = this.nextPlayerId();
+    }
+
     /**
      * 检查出牌的序列是否合理
      */
     checkPutIsTrue(){
         //TODO
+        return true;
+    }
+
+    setDir(dir){
+        this.dir = dir;
+        this.handPukes.dir = dir;
+        this.putPukes.dir = dir;
+    }
+
+    /**
+     * 显示牌的背面和剩余牌数，顺便把出的牌也显示了
+     * @param dir 默认主家mid，显示左右left和right
+     */
+    displayBack(){
+        let backStartX, backStartY;
+        let textStartX, textStartY;
+
+        switch (this.dir){
+            case "right":
+                backStartX = this.dataStore.canvas.width - this.dataStore._pukeStep - this.dataStore._pukeW;
+                backStartY = (this.dataStore.canvas.height - this.dataStore._pukeH) / 2;
+                textStartX = backStartX + this.dataStore._pukeW / 2 - 6;
+                textStartY = (this.dataStore.canvas.height) / 2 + 10;
+                this.putPukes.setStartX(backStartX - this.putPukes.len - this.dataStore._pukeStep * 2);
+                // this.putPukes.startX = backStartX - this.putPukes.len - this.dataStore._pukeStep * 2;
+
+                break;
+            case "left":
+                backStartX = this.dataStore._pukeStep;
+                backStartY = (this.dataStore.canvas.height - this.dataStore._pukeH) / 2;
+                textStartX = backStartX + this.dataStore._pukeW / 2 - 6;
+                textStartY = (this.dataStore.canvas.height) / 2 + 10;
+                this.putPukes.setStartX(backStartX + this.dataStore._pukeW + this.dataStore._pukeStep * 2);
+                // this.putPukes.startX = backStartX;// + this.dataStore._pukeW + this.putPukes.len + this.dataStore._pukeStep * 2;
+                break;
+            case "mid":
+                return;
+        }
+        this.putPukes.startY = backStartY;
+        this.putPukes.updateSite();
+        // console.log(this.id, this.putPukes);
+        this.putPukes.displayAllPukes();
+
+        this.pukeBack.drawXY(backStartX, backStartY);
+        this.dataStore.ctx.font = '25px Arial';
+        this.dataStore.ctx.fillStyle = '#22958a';
+        this.dataStore.ctx.fillText(
+            //这里的xy是文本框的左下角 一个数字长20 宽5~13
+            this.handPukes.pukeNum,
+            textStartX,
+            textStartY
+        );
+        this.dataStore.ctx.fillText(
+            //这里的xy是文本框的左下角 一个数字长20 宽5~13
+            this.id + "号",
+            textStartX,
+            backStartY - 20
+        );
+    }
+
+    robotCheckPut(){
+        return this.dataStore.curPutPlayerId === this.id;
+    }
+
+    /**
+     * 让人机输出第一张牌
+     */
+    robotPutPuke(){
+        this.dataStore.canPut = false;
+
+        console.log(this.dataStore.curPutPlayerId);
+        console.log(this.id + "号人机出了一张牌");
+        this.dataStore.curPutPlayerId = this.nextPlayerId();
+
+        this.putPukes.add(this.handPukes.get(0));
+        this.handPukes.remove(0);
+        this.handPukes.updateSite();
+        this.putPukes.updateSite();
+    }
+
+    /**
+     * 计算并返回下一个出牌玩家的id
+     * @returns {number}
+     */
+    nextPlayerId(){
+        let tempId = (this.dataStore.curPutPlayerId+1) % 3;
+        if(tempId === 0)
+            return 3;
+        else
+            return tempId;
     }
 }
