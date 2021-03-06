@@ -19,7 +19,7 @@ export class PukeHeap extends Sprite{
     }
 
     getOnePuke(){
-        let pukeId  = Math.floor(Math.random() * (this.havePukeNum - 0) + 0);  //产生[0, havePukeNum)
+        let pukeId  = Math.floor(Math.random() * (this.havePukeNum - 2) + 2);  //产生[2, havePukeNum)
         let pukeName = this.pukeData[pukeId];
         this.swap(pukeId, this.havePukeNum-1);
         let curPuke = new Puke(pukeName);

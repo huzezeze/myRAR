@@ -5,6 +5,7 @@ import {PukeHeap} from "./player/PukeHeap.js";
 import {Players} from "./player/Players.js";
 import {PutPukeButton} from "./runtime/PutPukeButton.js";
 import {CancelButton} from "./runtime/CancelButton.js";
+import {PriPutPukeStore} from "./player/PriPutPukeStore.js";
 
 export class Director {
 
@@ -47,6 +48,10 @@ export class Director {
         this.dataStore._pukeH = this._pukeH;
         this.dataStore._pukeStartHigh = this._pukeStartHigh;
         this.dataStore._pukeStep = this._pukeStep;
+
+
+        //记录上家出的牌
+        this.dataStore.priPut = new PriPutPukeStore();
 
 
 

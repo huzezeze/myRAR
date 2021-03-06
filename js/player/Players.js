@@ -28,6 +28,9 @@ export class Players {
             this.dataStore._pukeH - this.dataStore._pukeStep;
         // this.putPukeLen = 0;
 
+        //根据当前手牌和上家出的牌计算出的所有可出牌情况
+        this.allCanPut = [];
+
         this.isMyPhone = true;
         this.dir = 'mid';
 
@@ -45,9 +48,7 @@ export class Players {
         for(let i = 0; i < n; i++){
             let curPuke = this.dataStore.pukeHeap.getOnePuke();
             this.handPukes.add(curPuke);
-
         }
-
     }
 
     /**
@@ -113,7 +114,7 @@ export class Players {
     }
 
     /**
-     * 点击出牌按钮时，检查是否有牌被选中
+     * 玩家点击出牌按钮时，检查是否有牌被选中
      */
     checkPutPukes(){
         let havePut = false;
@@ -152,6 +153,13 @@ export class Players {
      */
     checkPutIsTrue(){
         //TODO
+        // if(this.dataStore.priPut.pukeNum === 0){
+        //     this.dataStore.priPut = this.putPukes.pukes;
+        //     return true;
+        // }
+        // else{
+        //
+        // }
         return true;
     }
 
