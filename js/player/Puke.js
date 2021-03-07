@@ -54,5 +54,10 @@ export class Puke extends Sprite{
         this.used = true;
     }
 
+    initState(){
+        this.up = false;
+        this.put = false;
+        this.used = false;
+    }
 
 }

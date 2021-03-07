@@ -11,50 +11,74 @@ export class PriPutPukeStore {
     constructor() {
         this.dataStore = DataStore.getInstance();
         this.pukes = [];
-        this.pukeNum = this.pukes.length;
+        this.pukeNum = 0;
         //这里的str只用保存牌面大小即可，不用花色
         this.pukeStr = [];
-        this.putType = this.getPutType(this.pukeStr);
-        this.map = new Map();
+        this.putType = -1;
+        this.pukeNameMap = this.getPukeNameMap();
         this.newPutStr = [];
-        this.newPutType = -1;
+        this.newPutType = -2;
     }
 
     /**
      * 传入putPukes，更新priPut内的数据,不包括下次nextCanPuts
      */
     update(putPukes){
-        for (let i = 0; i < putPukes.pukes.length; i++){
-            this.newPutStr[i] = putPukes.pukes[i].num;
-        }
-        if(this.checkPutIsTrue()){
             this.pukes = putPukes.pukes;
             this.pukeNum = this.pukes.length;
             this.pukeStr = this.newPutStr;
             this.putType = this.newPutType;
             return true;
-        }
-        else
-            return false;
     }
 
-    checkPutIsTrue(){
-        //1.检查两者出牌类型是否相同
+    clear(){
+        this.pukes = [];
+        this.pukeNum = 0;
+        this.pukeStr = [];
+        this.putType = -1;
+    }
+
+    checkPutIsTrue(putPukes){
+        this.newPutStr = [];
+        this.newPutType = -2;
+        for (let i = 0; i < putPukes.pukes.length; i++){
+            this.newPutStr[i] = putPukes.pukes[i].num;
+        }
         this.newPutType = this.getPutType(this.newPutStr);
+
+        //第一个出牌，只需出牌类型正确即可
+        if(this.pukeStr.length === 0 && this.putType === -1){
+            if(this.newPutType >= 0 && this.newPutType <= 4){
+                this.update(putPukes);
+                return true;
+            }
+            return false;
+        }
+        //1.检查两者出牌类型是否相同
         if(this.putType === this.newPutType){
             //刚好接住上家的牌
-            if(this.pukeStr[0]+1 === this.newPutStr[0])
+            if(this.pukeNameMap.get(this.pukeStr[0])+1
+                === this.pukeNameMap.get(this.newPutStr[0])){
+                this.update(putPukes);
                 return true;
+            }
+
+            console.log("下面判断是否是被2压制",this.dataStore.priPut);
             //出单或者出对时，被2压制
-            else if((this.putType === 1 || this.putType === 2) &&
-                    this.pukeStr[0] !== 'g' && this.newPutStr[0] === 'g')
+            if((this.putType === 0 || this.putType === 1) &&
+                    this.pukeStr[0] !== "g" && this.newPutStr[0] === "g"){
+                this.update(putPukes);
                 return true;
+            }
             return false;
         }
         //2.类型不同的话只能是炸弹压制
-        else if(this.newPutType === 4){
-            return this.putType!==4 || this.pukeStr[0] < this.newPutStr[0];
+        else if(this.newPutType === 4
+            && (this.putType!==4 || this.pukeStr[0] < this.newPutStr[0])){
+            this.update(putPukes);
+            return true;
         }
+
 
         return false;
     }
@@ -63,7 +87,7 @@ export class PriPutPukeStore {
      *
      * @param pukeStr 根据传入的str判断出牌的类型 这里的str只保存每张牌的大小，不含花色
      * 3~10：3,4,5,6,7,8,9,a, JQK：b,c,d, A2：e,g,  大小王：x,y
-     * @return -1：str为空， 0：出单， 1：出对， 2：连对， 3：顺子， 4：炸弹
+     * @return -1：str为空， 0：出单， 1：出对， 2：连对， 3：顺子， 4：炸弹  5：三个
      */
     getPutType(pukeStr){
         //TODO 先不考虑癞子
@@ -84,6 +108,8 @@ export class PriPutPukeStore {
                     return 3;
                 if (this._checkBoom(pukeStr))
                     return 4;
+                if(this._checkSanLian(pukeStr))
+                    return 5;
                 return -1;
         }
     }
@@ -121,5 +147,37 @@ export class PriPutPukeStore {
                 return false;
         }
         return true;
+    }
+
+    _checkSanLian(pukeStr){
+        let n = pukeStr.length;
+        if(n !== 3)
+            return false;
+        for (let i = 1; i < n; i++){
+            if(pukeStr[i] !== pukeStr[i-1])
+                return false;
+        }
+        return true;
+    }
+
+    getPukeNameMap(){
+        let map = new Map();
+        //3~10
+        map.set("3", 3);
+        map.set("4", 4);
+        map.set("5", 5);
+        map.set("6", 6);
+        map.set("7", 7);
+        map.set("8", 8);
+        map.set("9", 9);
+        map.set("a", 10);
+        //JQK
+        map.set("b", 11);
+        map.set("c", 12);
+        map.set("d", 13);
+        //AZ
+        map.set("e", 14);
+        map.set("g", 15);
+        return map;
     }
 }

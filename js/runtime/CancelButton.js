@@ -34,6 +34,8 @@ export class CancelButton extends Sprite{
     }
 
     display(){
+        if(this.dataStore.priPut.pukeNum === 0)
+            return;
         if(this.dataStore.showBut){
             this.drawXY(this.imgX, this.imgY);
         }

@@ -95,32 +95,69 @@ export class Director {
         if(this.dataStore.debug){
             console.log("checkTouch");
         }
-        //1.如果点击的是牌
-        if(this.play1.isSelPuke(this.touchStartX, this.touchStartY)){
-            // console.log("in");
-            this.play1.selPukesByTouchXY(
-                this.touchStartX, this.touchStartY, this.touchEndX, this.touchEndY);
+        switch (this.dataStore.curPutPlayerId){
+            case 1:{
+                    //1.如果点击的是牌
+                    if(this.play1.isSelPuke(this.touchStartX, this.touchStartY)){
+                        // console.log("in");
+                        this.play1.selPukesByTouchXY(
+                            this.touchStartX, this.touchStartY, this.touchEndX, this.touchEndY);
 
-        }
-        //2.如果点击的是按钮 TODO
-        if(this.putPukeButton.imgY < this.touchStartY
-            && this.touchStartY < this.putPukeButton.imgY + this.putPukeButton.height){
-            if(this.putPukeButton.checkClick(
-                this.touchStartX, this.touchStartY, this.touchEndX, this.touchEndY)
-                && this.dataStore.showBut){
-                    if(this.dataStore.debug)
-                        console.log("点击put");
-                    this.play1.checkPutPukes();
-                    this.play2.putPukes.clear();
-                    console.log("1号", this.play1.handPukes.pukeStr, this.play1.putPukes.pukeStr);
+                    }
+                    //2.如果点击的是按钮
+                    if(this.putPukeButton.imgY < this.touchStartY
+                        && this.touchStartY < this.putPukeButton.imgY + this.putPukeButton.height){
+                        //玩家点击的是出牌
+                        if(this.putPukeButton.checkClick(
+                            this.touchStartX, this.touchStartY, this.touchEndX, this.touchEndY)
+                            && this.dataStore.showBut)
+                        {
+                            if(this.dataStore.debug)
+                                console.log("点击put");
+                            //尝试将上浮的牌打出
+                            console.log(this.dataStore.priPut);
+                            if(this.play1.humanPutPukes()){
+                                console.log("1号", this.play1.handPukes.pukeStr, this.play1.putPukes.pukeStr);
+                                this.dataStore.showBut = false;
+                            }
+                            this.play2.putPukes.clear();
+
+                        }
+                        //玩家点击的是不出
+                        else if(this.cancelButton.checkClick(
+                            this.touchStartX, this.touchStartY, this.touchEndX, this.touchEndY)
+                            && this.dataStore.showBut)
+                        {
+                            if(this.dataStore.debug)
+                                console.log("点击cancel");
+                            this.play1.cancelPut();
+                            this.dataStore.showBut = false;
+                        }
+                    }
                 }
-            else if(this.cancelButton.checkClick(
-                this.touchStartX, this.touchStartY, this.touchEndX, this.touchEndY)
-                && this.dataStore.showBut){
-                    if(this.dataStore.debug)
-                        console.log("点击cancel");
-                    this.play1.cancelPut();
+                break;
+            case 2:{
+                    if(this.dataStore.canPut && this.play2.robotCheckPut()){
+                        console.log("2号人机要出牌了");
+                        console.log(this.dataStore.priPut);
+                        this.play2.robotPutPuke();
+                        this.play3.putPukes.clear();
+                        console.log("2号", this.play2.handPukes.pukeStr, this.play2.putPukes.pukeStr);
+                        this.delay(2);
+                    }
                 }
+                break;
+            case 3:{
+                    if(this.dataStore.canPut && this.play3.robotCheckPut()){
+                        console.log("3号人机要出牌了");
+                        console.log(this.dataStore.priPut);
+                        this.play3.robotPutPuke();
+                        this.play1.putPukes.clear();
+                        console.log("3号", this.play3.handPukes.pukeStr, this.play3.putPukes.pukeStr);
+                        this.delay(2);
+                    }
+                }
+                break;
         }
 
         //响应完本次点击事件后重新监听点击，并清屏重绘
@@ -131,30 +168,11 @@ export class Director {
             this.touchEndY = -1;
             this.onTouch();
 
-
-
             this.dataStore.ctx.clearRect(0, 0,
                 this.dataStore.canvas.width, this.dataStore.canvas.height);
+
             if(this.dataStore.curHostPlayerId === this.dataStore.curPutPlayerId){
                 this.dataStore.showBut = true;
-            }
-
-            else{
-                if(this.dataStore.canPut && this.play2.robotCheckPut()){
-                    console.log("2号人机要出牌了");
-                    this.play2.robotPutPuke();
-                    this.play3.putPukes.clear();
-                    console.log("2号", this.play2.handPukes.pukeStr, this.play2.putPukes.pukeStr);
-                    this.delay(2);
-                }
-                if(this.dataStore.canPut && this.play3.robotCheckPut()){
-                    console.log("3号人机要出牌了");
-                    this.play3.robotPutPuke();
-                    this.play1.putPukes.clear();
-                    console.log("3号", this.play3.handPukes.pukeStr, this.play3.putPukes.pukeStr);
-                    this.delay(2);
-                }
-                this.dataStore.showBut = false;
             }
 
             console.log("应该出了一张牌");

@@ -1,5 +1,6 @@
 import {DataStore} from "../base/DataStore.js";
 import {Sprite} from "../base/Sprite";
+import {Puke} from "./Puke";
 
 /**
  * @Description: 玩家牌组类
@@ -12,7 +13,7 @@ export class PlayerPukes {
                 startX = 0,
                 startY = 0,
                 len = 0) {
-        console.log('playerPukes初始化');
+        // console.log('playerPukes初始化');
         this.dataStore = DataStore.getInstance();
 
         this.pukes = pukes;
@@ -128,8 +129,17 @@ export class PlayerPukes {
 
     clear(){
         this.pukes = [];
+        this.pukeStr = [];
         this.pukeNum = 0;
         this.startX = 0;
         this.len = 0;
+    }
+
+    copy(){
+        let res = new PlayerPukes(Array.from(this.pukes), this.pukeNum,
+            this.startX, this.startY, this.len);
+        res.pukeStr = Array.from(this.pukeStr);
+        res.dir = this.dir;
+        return res;
     }
 }

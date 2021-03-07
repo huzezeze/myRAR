@@ -1,6 +1,6 @@
 import {DataStore} from "../base/DataStore.js";
 import {PlayerPukes} from "./PlayerPukes.js";
-import {Sprite} from "../base/Sprite";
+import {Sprite} from "../base/Sprite.js";
 
 /**
  * @Description:  玩家类
@@ -114,7 +114,25 @@ export class Players {
     }
 
     /**
-     * 玩家点击出牌按钮时，检查是否有牌被选中
+     * 玩家点击出牌按钮时判断是否有牌被选中，并检查出牌的合理性
+     */
+    humanPutPukes(){
+        if(this.checkPutPukes() && this.checkPutIsTrue()){
+            //当前玩家出完牌之后 出牌权转到下家
+            console.log("修改this.dataStore.curPutPlayerId");
+            this.dataStore.curPutPlayerId = this.nextPlayerId();
+            this.handPukes.updateSite();
+            this.putPukes.updateSite();
+            return true;
+        }
+        else {
+            this.returnPutPukes();
+            return false;
+        }
+    }
+
+    /**
+     * 检查是否有牌被选中 返回true，false
      */
     checkPutPukes(){
         let havePut = false;
@@ -131,16 +149,24 @@ export class Players {
             else
                 curId ++;
         }
-        //当前玩家出完牌之后 出牌权转到下家
-        if(havePut && this.checkPutIsTrue()){
-            console.log("修改this.dataStore.curPutPlayerId");
-            this.dataStore.curPutPlayerId = this.nextPlayerId();
-        }
-
-        this.handPukes.updateSite();
-        this.putPukes.updateSite();
 
         return havePut;
+    }
+
+    /**
+     * 如果出牌失败要将putPukes回退
+     */
+    returnPutPukes(){
+        console.log("出牌失败，回退");
+        for(let i = this.putPukes.pukeNum-1; i >=0 ; i--){
+            let curPuke = this.putPukes.pukes[i];
+                curPuke.initState();
+                this.handPukes.add(curPuke);
+
+        }
+        this.putPukes.clear();
+        this.handPukes.sortPuke();
+        this.handPukes.updateSite();
     }
 
     cancelPut(){
@@ -152,15 +178,9 @@ export class Players {
      * 检查出牌的序列是否合理
      */
     checkPutIsTrue(){
-        //TODO
-        // if(this.dataStore.priPut.pukeNum === 0){
-        //     this.dataStore.priPut = this.putPukes.pukes;
-        //     return true;
-        // }
-        // else{
-        //
-        // }
-        return true;
+        return this.dataStore.priPut.checkPutIsTrue(this.putPukes);
+
+        // return true;
     }
 
     setDir(dir){
@@ -225,19 +245,72 @@ export class Players {
     }
 
     /**
-     * 让人机输出第一张牌
+     * 让人机尝试接牌
      */
     robotPutPuke(){
-        this.dataStore.canPut = false;
+        let isPut = false;
 
-        console.log(this.dataStore.curPutPlayerId);
-        console.log(this.id + "号人机出了一张牌");
-        this.dataStore.curPutPlayerId = this.nextPlayerId();
+        console.log("当前是", this.dataStore.curPutPlayerId,"号人机出牌");
+        console.log(this.id + "号人机尝试出牌");
+        let testHandPukes = this.handPukes;
+        let testPutPukes = this.putPukes;
+        let allCan = [];//这里保存全排列情况, 三维数组，第一维是取几个数字，第二维是第几种情况，第三维是当前数字是几
 
-        this.putPukes.add(this.handPukes.get(0));
-        this.handPukes.remove(0);
-        this.handPukes.updateSite();
-        this.putPukes.updateSite();
+        let temp = this.getAllCan();
+        let priPutPukeNum = this.dataStore.priPut.pukeNum;
+        //如果上家出的四张以上，最少也要出四张牌压，或者放弃出牌
+        if(priPutPukeNum >= 4){
+            if(this.handPukes.pukeNum < 4){
+                this.cancelPut();
+                return isPut;
+            }
+            allCan[0] = temp[4-1];
+            if(this.handPukes.pukeNum >= priPutPukeNum)
+                allCan[1] = temp[priPutPukeNum-1];
+        }
+        else{//上家出了少于4张牌
+            if(this.handPukes.pukeNum < priPutPukeNum){
+                this.cancelPut();
+                return isPut;
+            }
+            allCan[0] = temp[priPutPukeNum-1];
+            if(this.handPukes.pukeNum >= 4)
+                allCan[1] = temp[4-1];
+        }
+
+        //遍历所有出牌情况
+        for (let i = 0; i < allCan.length; i++){
+            let cur = allCan[i];
+            for(let j = 0; j < cur.length; j++){
+                let curCan = cur[j];
+                //根据当前出牌情况创建hand和put
+                testHandPukes = this.handPukes.copy();
+                testPutPukes = this.putPukes.copy();
+                for (let k = curCan.length-1; k >= 0; k--){
+                    testPutPukes.add(testHandPukes.remove(curCan[k]));
+                }
+                //测试新建的put是否能接牌，如果能接上就出
+                // console.log("尝试",testPutPukes.pukeStr);
+                // console.log("上家",this.dataStore.priPut);
+                if(this.dataStore.priPut.checkPutIsTrue(testPutPukes)){
+                    isPut = true;
+                    this.dataStore.curPutPlayerId = this.nextPlayerId();
+                    this.dataStore.canPut = false;
+
+                    this.handPukes = testHandPukes;
+                    this.putPukes = testPutPukes;
+                    this.handPukes.updateSite();
+                    this.putPukes.updateSite();
+                    return isPut;
+                }
+            }
+
+        }
+        //所有出牌可能都不行，则出牌失败
+        if(!isPut)
+            this.cancelPut();
+
+        return isPut;
     }
 
     /**
@@ -250,5 +323,42 @@ export class Players {
             return 3;
         else
             return tempId;
+    }
+
+    getAllCan(){
+        let res = [];
+        for(let i = 1; i <= this.handPukes.pukeNum; i++){
+        //     for(let i = 1; i <= 2; i++){
+            let tempRes = [];
+            this._getAllCan(0, i, [], tempRes);
+            res[i-1] = tempRes;
+        }
+        return res;
+    }
+
+    /**
+     * 从cur开始考虑，取need个数字的所有情况，放入res中
+     * @param cur       当前考虑第几个位置
+     * @param need      还需要几个数字
+     * @param curRes    当前的结果
+     * @param res       总结果
+     * @private
+     */
+    _getAllCan(cur, need, curRes, res){
+        if(need === 0){
+            res[res.length] = curRes.concat();
+            return;
+        }
+        if(cur >= this.handPukes.pukeNum)
+            return;
+
+        //如果还有数字可考虑，且还需要数字，则当前位置的数字有加入和不加入两种情况
+        //考虑当前，再去下一个
+        let newCurRes = curRes.concat();
+        newCurRes[curRes.length] = cur;
+        this._getAllCan(cur+1, need-1, newCurRes, res);
+
+        //不考虑当前位置，直接去下一个
+        this._getAllCan(cur+1, need, curRes, res);
     }
 }
