@@ -5,10 +5,12 @@
  */
 import {Sprite} from "../base/Sprite.js";
 import {Puke} from "./Puke.js";
+import {DataStore} from "../base/DataStore.js";
 
 export class PukeHeap extends Sprite{
     constructor() {
         super();
+        this.dataStore = DataStore.getInstance();
         this.pukeData = ["bossBig", "bossSmall",
                 "fe","fg","f3","f4","f5","f6","f7","f8","f9","fa","fb","fc","fd",
                 "he","hg","h3","h4","h5","h6","h7","h8","h9","ha","hb","hc","hd",
@@ -37,6 +39,17 @@ export class PukeHeap extends Sprite{
             //TODO 如果未结束就没牌 将使用过的牌进行洗牌重组
 
         }
+    }
+
+    displayHavePuke(){
+        this.dataStore.ctx.font = '20px Arial';
+        this.dataStore.ctx.fillStyle = '#ff0000';
+        this.dataStore.ctx.fillText(
+            //这里的xy是文本框的左下角 一个数字长20 宽5~13
+            "剩余"+this.havePukeNum+"张牌",
+            this.dataStore.canvas.width / 2 - 50,
+            (this.dataStore.canvas.height) / 2 - 90
+        );
     }
 
 

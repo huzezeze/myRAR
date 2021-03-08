@@ -48,14 +48,14 @@ export class PriPutPukeStore {
 
         //第一个出牌，只需出牌类型正确即可
         if(this.pukeStr.length === 0 && this.putType === -1){
-            if(this.newPutType >= 0 && this.newPutType <= 4){
+            if(this.newPutType >= 0 && this.newPutType <= 5){
                 this.update(putPukes);
                 return true;
             }
             return false;
         }
         //1.检查两者出牌类型是否相同
-        if(this.putType === this.newPutType){
+        if(this.putType === this.newPutType && this.pukeStr.length === this.newPutStr.length){
             //刚好接住上家的牌
             if(this.pukeNameMap.get(this.pukeStr[0])+1
                 === this.pukeNameMap.get(this.newPutStr[0])){
@@ -100,7 +100,8 @@ export class PriPutPukeStore {
             case 2: //只有两张牌且两张牌数字相同，为出对，（这里没有王炸），先不考虑癞子
                 if (pukeStr[0] === pukeStr[1])
                     return 1;
-                break;
+                else
+                    return -1;
             default:
                 if (this._checkLianDui(pukeStr))
                     return 2;
@@ -119,10 +120,12 @@ export class PriPutPukeStore {
         //这里连对最少是两对
         if(n < 4 || n % 2 !== 0 )
             return false;
-        for(let i = 0; i < n / 2; i++){
-            let type = this.getPutType(pukeStr.slice(i*2, i*2+2));//slice函数取值区间是左闭右开
-            if(type !== 1)
+        for(let i = 1; i < n; i++){
+            let t = i % 2;
+            if( this.pukeNameMap.get(pukeStr[i]) - (1^t)    //这里^的优先级问题，需要加括号
+                !== this.pukeNameMap.get(pukeStr[i-1]) )
                 return false;
+
         }
         return true;
     }
@@ -132,7 +135,7 @@ export class PriPutPukeStore {
         if(n < 3)
             return false;
         for (let i = 1; i < n; i++){
-            if(pukeStr[i]-1 !== pukeStr[i-1])
+            if(this.pukeNameMap.get(pukeStr[i])-1 !== this.pukeNameMap.get(pukeStr[i-1]))
                 return false;
         }
         return true;

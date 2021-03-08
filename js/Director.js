@@ -52,7 +52,7 @@ export class Director {
 
         //记录上家出的牌
         this.dataStore.priPut = new PriPutPukeStore();
-
+        this.dataStore.priPutPlayerId = 1;
 
 
         //保存点击的位置
@@ -71,6 +71,7 @@ export class Director {
         this.dataStore.pukeHeap = this.pukeHeap;
 
         this.playerNum = 3;
+        this.plays = [];
         this.dataStore.curHostPlayerId = 1;
         this.dataStore.curPutPlayerId = 1;
 
@@ -82,6 +83,7 @@ export class Director {
 
         this.play2 = new Players(2); this.play2.setDir('right');
         this.play3 = new Players(3); this.play3.setDir('left');
+        this.plays = [this.play1, this.play2, this.play3];
         console.log(this.play1.handPukes.pukeStr);
         console.log(this.play2.handPukes.pukeStr);
         console.log(this.play3.handPukes.pukeStr);
@@ -94,6 +96,20 @@ export class Director {
     checkTouch(){
         if(this.dataStore.debug){
             console.log("checkTouch");
+        }
+        //转了一圈都没人接
+        if(this.dataStore.curPutPlayerId === this.dataStore.priPutPlayerId &&
+        this.dataStore.priPut.pukeNum !== 0){
+            this.dataStore.priPut.clear();
+            this.play1.putPukes.clear();
+            this.play2.putPukes.clear();
+            this.play3.putPukes.clear();
+            console.log("没人要的起，开始起牌");
+            for (let i = 0; i < this.playerNum; i++){
+                console.log(this.dataStore.curPutPlayerId,"号摸一张牌");
+                this.plays[this.dataStore.curPutPlayerId - 1].getPukes(1);
+                this.dataStore.curPutPlayerId = this.play1.nextPlayerId(this.dataStore.curPutPlayerId);
+            }
         }
         switch (this.dataStore.curPutPlayerId){
             case 1:{
@@ -117,6 +133,7 @@ export class Director {
                             //尝试将上浮的牌打出
                             console.log(this.dataStore.priPut);
                             if(this.play1.humanPutPukes()){
+                                this.dataStore.priPutPlayerId = 1;
                                 console.log("1号", this.play1.handPukes.pukeStr, this.play1.putPukes.pukeStr);
                                 this.dataStore.showBut = false;
                             }
@@ -140,7 +157,8 @@ export class Director {
                     if(this.dataStore.canPut && this.play2.robotCheckPut()){
                         console.log("2号人机要出牌了");
                         console.log(this.dataStore.priPut);
-                        this.play2.robotPutPuke();
+                        if(this.play2.robotPutPuke())
+                            this.dataStore.priPutPlayerId = 2;
                         this.play3.putPukes.clear();
                         console.log("2号", this.play2.handPukes.pukeStr, this.play2.putPukes.pukeStr);
                         this.delay(2);
@@ -151,7 +169,8 @@ export class Director {
                     if(this.dataStore.canPut && this.play3.robotCheckPut()){
                         console.log("3号人机要出牌了");
                         console.log(this.dataStore.priPut);
-                        this.play3.robotPutPuke();
+                        if(this.play3.robotPutPuke())
+                            this.dataStore.priPutPlayerId = 3;
                         this.play1.putPukes.clear();
                         console.log("3号", this.play3.handPukes.pukeStr, this.play3.putPukes.pukeStr);
                         this.delay(2);
@@ -231,6 +250,7 @@ export class Director {
         this.cancelButton.display();
         this.play2.displayBack();
         this.play3.displayBack();
+        this.pukeHeap.displayHavePuke();
     }
 
     /**

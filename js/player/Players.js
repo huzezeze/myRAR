@@ -120,7 +120,7 @@ export class Players {
         if(this.checkPutPukes() && this.checkPutIsTrue()){
             //当前玩家出完牌之后 出牌权转到下家
             console.log("修改this.dataStore.curPutPlayerId");
-            this.dataStore.curPutPlayerId = this.nextPlayerId();
+            this.dataStore.curPutPlayerId = this.nextPlayerId(this.dataStore.curPutPlayerId);
             this.handPukes.updateSite();
             this.putPukes.updateSite();
             return true;
@@ -171,7 +171,7 @@ export class Players {
 
     cancelPut(){
         console.log(this.id + "号放弃出牌");
-        this.dataStore.curPutPlayerId = this.nextPlayerId();
+        this.dataStore.curPutPlayerId = this.nextPlayerId(this.dataStore.curPutPlayerId);
     }
 
     /**
@@ -258,8 +258,11 @@ export class Players {
 
         let temp = this.getAllCan();
         let priPutPukeNum = this.dataStore.priPut.pukeNum;
+        //如果到人机先出，则默认出单
+        if(priPutPukeNum === 0)
+            allCan[0] = temp[0];
         //如果上家出的四张以上，最少也要出四张牌压，或者放弃出牌
-        if(priPutPukeNum >= 4){
+        else if(priPutPukeNum >= 4){
             if(this.handPukes.pukeNum < 4){
                 this.cancelPut();
                 return isPut;
@@ -294,7 +297,7 @@ export class Players {
                 // console.log("上家",this.dataStore.priPut);
                 if(this.dataStore.priPut.checkPutIsTrue(testPutPukes)){
                     isPut = true;
-                    this.dataStore.curPutPlayerId = this.nextPlayerId();
+                    this.dataStore.curPutPlayerId = this.nextPlayerId(this.dataStore.curPutPlayerId);
                     this.dataStore.canPut = false;
 
                     this.handPukes = testHandPukes;
@@ -317,8 +320,8 @@ export class Players {
      * 计算并返回下一个出牌玩家的id
      * @returns {number}
      */
-    nextPlayerId(){
-        let tempId = (this.dataStore.curPutPlayerId+1) % 3;
+    nextPlayerId(priId){
+        let tempId = (priId+1) % 3;
         if(tempId === 0)
             return 3;
         else
