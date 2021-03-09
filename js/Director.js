@@ -276,7 +276,7 @@ export class Director {
 
         this.displayAll();
 
-
+        //TODO 即时是静态画面游戏也需要requestAnimationFrame逐帧执行，否则某些手机上会显示不出来
         /**
          * 开始动画循环   此处似乎不需要进行动画循环
          */
